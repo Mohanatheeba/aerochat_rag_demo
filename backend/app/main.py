@@ -21,6 +21,13 @@ async def lifespan(app: FastAPI):
     yield
     print("Backend shutting down...")
 
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    # This tells the app to use the port Render assigns it
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
 app = FastAPI(
     title="AeroChat RAG API",
     description="AeroChat RAG Backend — Staging Environment (Free Stack)",
