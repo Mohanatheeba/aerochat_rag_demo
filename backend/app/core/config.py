@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     # Upstash (Redis / Railway Layer)
     UPSTASH_REDIS_REST_URL: str = ""
     UPSTASH_REDIS_REST_TOKEN: str = ""
+    HUGGINGFACE_API_KEY: str = ""
     
     # RAG Settings
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"

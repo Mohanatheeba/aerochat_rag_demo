@@ -16,15 +16,7 @@ async def lifespan(app: FastAPI):
     print("🚀 AeroChat RAG Backend starting...")
     settings = get_settings()
     
-    # Pre-warm embedding model
-    try:
-        from .services.embedding_service import get_embedding_service
-        embedder = get_embedding_service()
-        embedder._load_model()
-        print("   Embedding model: loaded ✓")
-    except Exception as e:
-        print(f"   Embedding model: failed to pre-load ({e})")
-
+    # Backend ready
     print("✅ Backend ready!")
     yield
     print("Backend shutting down...")
