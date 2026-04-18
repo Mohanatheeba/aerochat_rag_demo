@@ -33,7 +33,7 @@ class RAGRetrievalService:
         print(f"🕵️  Intent Refined: '{query}' -> '{search_query}'")
         
         # Phase 2: Embedding
-        query_embedding = self.embedder.embed_text(search_query)
+        query_embedding = await self.embedder.embed_text(search_query)
 
         # Call the RPC function defined in supabase_setup.sql
         print(f"🔍 Searching DB for tenant {tenant_id}...")

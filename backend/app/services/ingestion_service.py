@@ -73,7 +73,7 @@ class DocumentIngestionService:
             # 4. Embed and store
             if chunks:
                 texts = [c["text"] for c in chunks]
-                embeddings = self.embedder.embed_batch(texts)
+                embeddings = await self.embedder.embed_batch(texts)
                 
                 rows = []
                 for chunk, embedding in zip(chunks, embeddings):
