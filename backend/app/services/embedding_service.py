@@ -17,17 +17,19 @@ class EmbeddingService:
                 response = await client.post(
                     self.api_url, 
                     headers=self.headers, 
-                    json={"inputs": text},
+                    json={"inputs": text, "options": {"wait_for_model": True}},
                     timeout=30.0
                 )
                 response.raise_for_status()
                 data = response.json()
                 
-                # Hugging Face API sometimes returns a nested list [[0.1, 0.2...]]
-                # We need to make sure we return a flat list [0.1, 0.2...]
-                if isinstance(data, list) and len(data) > 0 and isinstance(data[0], list):
-                    return data[0]
-                return data
+                # FIX: Ensure we always return a flat list of floats
+                if isinstance(data, list):
+                    if len(data) > 0 and isinstance(data[0], list):
+                        return [float(x) for x in data[0]] # Handle [[...]]
+                    return [float(x) for x in data] # Handle [...]
+                
+                raise Exception(f"Unexpected data format: {type(data)}")
                 
             except Exception as e:
                 print(f"HF API Error: {e}")
