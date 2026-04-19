@@ -6,6 +6,7 @@ from ..services.redis_service import get_redis_service
 from ..services.retrieval_service import get_retrieval_service
 from ..services.llm_service import get_llm_service
 from ..services.shopify_service import get_shopify_service
+from ..services.tier3_college_service import get_tier3_college_service
 
 class ChatOrchestrator:
     """
@@ -19,6 +20,7 @@ class ChatOrchestrator:
         self.retrieval = get_retrieval_service()
         self.llm = get_llm_service()
         self.shopify = get_shopify_service()
+        self.tier3 = get_tier3_college_service()
 
     async def process_message(
         self,
@@ -40,11 +42,23 @@ class ChatOrchestrator:
             context, retrieved_chunks = await self.retrieval.get_context_string(tenant_id, user_message)
             print(f"   [RAG] Found {len(retrieved_chunks)} chunks.")
 
+            # Step 2b: Tier 3 College Lookup (if Tier 1/2 retrieval fails)
+            tier3_data = ""
+            intent = self.llm.check_intent(user_message)
+            if not context and intent.get("requires_college_lookup"):
+                print("📚 [TIER3] No Tier 1/2 context found. Attempting Tier 3 lookup...")
+                try:
+                    tier3_result = await self.tier3.lookup_npc(user_message)
+                    if tier3_result["status"] != "failed":
+                        tier3_data = self.tier3.format_result_for_llm(tier3_result)
+                        print(f"   [TIER3] Lookup completed: {tier3_result['status']}")
+                except Exception as e:
+                    print(f"   [TIER3] Lookup error: {str(e)}")
+
             # Step 3: Live Data (Shopify)
             shopify_data = ""
             if tenant_info and tenant_info.get("shopify_enabled"):
-                intent = self.llm.check_intent(user_message)
-                if intent["requires_shopify"]:
+                if intent.get("requires_shopify"):
                     order_number = self.shopify.extract_order_number(user_message)
                     if order_number:
                         order = await self.shopify.get_order_by_number(
@@ -54,12 +68,17 @@ class ChatOrchestrator:
                         )
                         shopify_data = self.shopify.format_order_for_llm(order)
 
+            # Combine context: RAG + Tier3 + Shopify
+            combined_context = context
+            if tier3_data:
+                combined_context = (context + "\n\n" + tier3_data) if context else tier3_data
+
             # Step 4: Generation
             print("🧠 [LLM] Generating response...")
             session_history = await self.redis.get_context(session_id)
             response_text, llm_latency = self.llm.generate_response(
                 user_query=user_message,
-                context=context,
+                context=combined_context,
                 session_history=session_history,
                 bot_name=bot_config.get("bot_name", "Assistant"),
                 custom_instructions=bot_config.get("system_prompt", ""),

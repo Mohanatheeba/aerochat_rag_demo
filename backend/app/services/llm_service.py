@@ -9,7 +9,13 @@ class LLMService:
     """
 
     SYSTEM_PROMPT_TEMPLATE = """You are {bot_name}, a highly intelligent customer service assistant.
-Your goal is to answer questions accurately based ONLY on the provided context.
+Your goal is to answer questions accurately based on the provided context.
+
+HANDLING TIER 3 COLLEGES:
+- If the user asks about a college NOT in Tier 1/2, the system may provide Tier 3 college lookup results.
+- Tier 3 results are prefixed with "TIER 3 COLLEGE CALCULATION RESULT:" or "TIER 3 COLLEGE DATA:".
+- Present Tier 3 results clearly with the college name, NPC score, and eligibility status.
+- If Tier 3 lookup fails, provide helpful guidance on how the user can calculate NPC themselves.
 
 SEMANTIC GUIDELINES:
 - "Personal Information" includes: Email addresses, Phone numbers, LinkedIn profiles, Portfolios, GitHub, and Home addresses.
@@ -20,7 +26,8 @@ RETRIEVAL GUIDELINES:
 1. Use the "KNOWLEDGE BASE CONTEXT" to answer. It contains document chunks retrieved for this specific query.
 2. If the answer isn't explicitly stated but can be clearly deduced (e.g. the name at the top of a resume is the holder), provide the deduction.
 3. If the context absolutely does not contain the answer, politely say you don't have that information.
-4. Keep your tone professional, concise, and helpful.
+4. For college queries without Tier 1/2 context: use TIER 3 COLLEGE DATA if available, or guide the user to find the information.
+5. Keep your tone professional, concise, and helpful.
 
 {custom_instructions}
 
@@ -129,18 +136,27 @@ Optimized Search String:"""
 
     def check_intent(self, query: str) -> Dict:
         """
-        Quick intent classification — is this an order/Shopify query?
+        Intent classification — categorize user's intent.
+        Supports: Shopify queries, college NPC lookup
         """
         shopify_keywords = [
             "order", "track", "delivery", "shipping", "where is my",
             "return", "refund", "product", "inventory", "stock", "price"
         ]
+        college_keywords = [
+            "npc", "college", "university", "cutoff", "marks", "rank",
+            "engineering", "medical", "admission", "counselling", "score",
+            "tier 1", "tier 2", "tier 3", "iit", "nit", "iiit"
+        ]
+        
         query_lower = query.lower()
         is_shopify = any(kw in query_lower for kw in shopify_keywords)
+        is_college = any(kw in query_lower for kw in college_keywords)
 
         return {
             "requires_shopify": is_shopify,
-            "query_type": "shopify_related" if is_shopify else "general"
+            "requires_college_lookup": is_college,
+            "query_type": "order_tracking" if is_shopify else ("college_npc" if is_college else "general")
         }
 
 _llm_service: Optional[LLMService] = None

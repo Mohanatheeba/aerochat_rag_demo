@@ -92,19 +92,27 @@ KNOWLEDGE BASE CONTEXT:
 
     def check_intent(self, query: str) -> dict:
         """
-        Quick intent classification — is this an order/Shopify query?
-        Avoids unnecessary Shopify API calls.
+        Intent classification — categorize user's intent.
+        Supports: Shopify queries, college NPC lookup
         """
         shopify_keywords = [
             "order", "track", "delivery", "shipping", "where is my",
             "return", "refund", "product", "inventory", "stock", "price"
         ]
+        college_keywords = [
+            "npc", "college", "university", "cutoff", "marks", "rank",
+            "engineering", "medical", "admission", "counselling", "score",
+            "tier 1", "tier 2", "tier 3", "iit", "nit", "iiit"
+        ]
+        
         query_lower = query.lower()
         is_shopify = any(kw in query_lower for kw in shopify_keywords)
+        is_college = any(kw in query_lower for kw in college_keywords)
 
         return {
             "requires_shopify": is_shopify,
-            "query_type": "order_tracking" if is_shopify else "general"
+            "requires_college_lookup": is_college,
+            "query_type": "order_tracking" if is_shopify else ("college_npc" if is_college else "general")
         }
 
 
