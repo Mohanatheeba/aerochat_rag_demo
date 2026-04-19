@@ -21,8 +21,14 @@ class EmbeddingService:
                     timeout=30.0
                 )
                 response.raise_for_status()
-                # API returns a list (the embedding)
-                return response.json()
+                data = response.json()
+                
+                # Hugging Face API sometimes returns a nested list [[0.1, 0.2...]]
+                # We need to make sure we return a flat list [0.1, 0.2...]
+                if isinstance(data, list) and len(data) > 0 and isinstance(data[0], list):
+                    return data[0]
+                return data
+                
             except Exception as e:
                 print(f"HF API Error: {e}")
                 raise Exception(f"Failed to generate embedding: {e}")
