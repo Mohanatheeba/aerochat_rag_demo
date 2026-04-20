@@ -1,11 +1,11 @@
 import time
-from groq import Groq
+from openai import AsyncOpenAI
 from ..core.config import get_settings
 from typing import Optional, List, Dict, Tuple
 
 class LLMService:
     """
-    Generates responses using retrieved context + session history via Groq (Free Tier).
+    Generates responses using retrieved context + session history via OpenAI (GPT-4o-mini).
     """
 
     SYSTEM_PROMPT_TEMPLATE = """You are {bot_name}, a highly intelligent customer service assistant.
@@ -32,10 +32,10 @@ KNOWLEDGE BASE CONTEXT:
 
     def __init__(self):
         self.settings = get_settings()
-        self.client = Groq(api_key=self.settings.GROQ_API_KEY)
+        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
         self.model = self.settings.LLM_MODEL
 
-    def generate_response(
+    async def generate_response(
         self,
         user_query: str,
         context: str,
@@ -43,7 +43,7 @@ KNOWLEDGE BASE CONTEXT:
         bot_name: str = "AeroChat Assistant",
         custom_instructions: str = "",
         shopify_data: str = "",
-        temperature: float = 0.7,
+        temperature: float = 0.1,  # Lower temperature for RAG stability
         max_tokens: int = 500
     ) -> Tuple[str, int]:
         """
@@ -74,7 +74,7 @@ KNOWLEDGE BASE CONTEXT:
         start_time = time.time()
 
         try:
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=temperature,
@@ -83,18 +83,16 @@ KNOWLEDGE BASE CONTEXT:
             )
             response_text = response.choices[0].message.content
         except Exception as e:
+            print(f"OpenAI Generation Error: {e}")
             response_text = f"Error generating response: {str(e)}"
 
         latency_ms = int((time.time() - start_time) * 1000)
 
         return response_text, latency_ms
 
-    def refine_query(self, user_query: str) -> str:
+    async def refine_query(self, user_query: str) -> str:
         """
-        Hyper-Advanced Intent Analysis: 
-        1. Analyzes user's underlying goal.
-        2. Resolves pronouns (her, him, this person).
-        3. Expands synonyms for broad semantic matching.
+        Advanced Intent Analysis for optimized vector search.
         """
         refinement_prompt = f"""Target: AI-Driven Vector Search Optimization.
 Task: Understand the user's INTENT and expand the query for a high-accuracy document search.
@@ -114,22 +112,23 @@ User Query: "{user_query}"
 Optimized Search String:"""
 
         try:
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": refinement_prompt}],
                 temperature=0.1,
                 max_tokens=100
             )
             refined = response.choices[0].message.content.strip().strip('"')
-            # Log for debugging (visible in user's terminal)
-            print(f"🤖 Intent Mapping: '{user_query}' → '{refined}'")
+            print(f"🤖 OpenAI Intent Mapping: '{user_query}' → '{refined}'")
             return refined
-        except:
+        except Exception as e:
+            print(f"Refine Query Error: {e}")
             return user_query
 
     def check_intent(self, query: str) -> Dict:
         """
         Quick intent classification — is this an order/Shopify query?
+        Still synchronous as it's a simple heuristic.
         """
         shopify_keywords = [
             "order", "track", "delivery", "shipping", "where is my",

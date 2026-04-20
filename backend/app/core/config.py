@@ -23,12 +23,13 @@ class Settings(BaseSettings):
     UPSTASH_REDIS_REST_URL: str = ""
     UPSTASH_REDIS_REST_TOKEN: str = ""
     HUGGINGFACE_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
     
     # RAG Settings
-    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
     CHUNK_SIZE: int = 1200
     CHUNK_OVERLAP: int = 150
-    VECTOR_DIMENSION: int = 384
+    VECTOR_DIMENSION: int = 1536
     
     model_config = {
         "env_file": ".env",

@@ -1,62 +1,40 @@
-import httpx
+from openai import AsyncOpenAI
 from ..core.config import get_settings
 from typing import List, Optional
 
 class EmbeddingService:
-    """Handles vector embedding generation using Hugging Face Inference API."""
+    """Handles vector embedding generation using OpenAI's text-embedding-3-small."""
     
     def __init__(self):
         self.settings = get_settings()
-        self.api_url = f"https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
-        self.headers = {"Authorization": f"Bearer {self.settings.HUGGINGFACE_API_KEY}"}
+        # The AsyncOpenAI client automatically looks for OPENAI_API_KEY if not passed,
+        # but we pass it explicitly from our settings for clarity.
+        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
+        self.model = self.settings.EMBEDDING_MODEL
 
     async def embed_text(self, text: str) -> List[float]:
-        """Generate embedding for a single string via API."""
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    self.api_url, 
-                    headers=self.headers, 
-                    json={"inputs": text, "options": {"wait_for_model": True}},
-                    timeout=30.0
-                )
-                response.raise_for_status()
-                data = response.json()
-                
-                # FIX: Ensure we always return a flat list of floats
-                if isinstance(data, list):
-                    if len(data) > 0 and isinstance(data[0], list):
-                        return [float(x) for x in data[0]] # Handle [[...]]
-                    return [float(x) for x in data] # Handle [...]
-                
-                raise Exception(f"Unexpected data format: {type(data)}")
-                
-            except Exception as e:
-                print(f"HF API Error: {e}")
-                raise Exception(f"Failed to generate embedding: {e}")
+        """Generate embedding for a single string using OpenAI."""
+        try:
+            response = await self.client.embeddings.create(
+                input=text,
+                model=self.model
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            print(f"OpenAI Embedding Error: {e}")
+            raise Exception(f"Failed to generate embedding: {e}")
 
     async def embed_batch(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for a batch of strings via API."""
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    self.api_url, 
-                    headers=self.headers, 
-                    json={"inputs": texts},
-                    timeout=60.0
-                )
-                response.raise_for_status()
-                # API returns a list of lists
-                result = response.json()
-                
-                # Validation: Sometimes API might return nested list if it's a single input mistakenly
-                if isinstance(result, list) and len(result) > 0:
-                    return result
-                
-                raise Exception("Unexpected response format from HF API")
-            except Exception as e:
-                print(f"HF API Batch Error: {e}")
-                raise Exception(f"Failed to generate batch embeddings: {e}")
+        """Generate embeddings for a batch of strings using OpenAI."""
+        try:
+            response = await self.client.embeddings.create(
+                input=texts,
+                model=self.model
+            )
+            return [item.embedding for item in response.data]
+        except Exception as e:
+            print(f"OpenAI Batch Embedding Error: {e}")
+            raise Exception(f"Failed to generate batch embeddings: {e}")
 
 _embedding_service: Optional[EmbeddingService] = None
 

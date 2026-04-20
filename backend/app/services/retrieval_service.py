@@ -29,7 +29,7 @@ class RAGRetrievalService:
         k = top_k or 8
         
         # Phase 1: AI Query Understanding
-        search_query = self.llm.refine_query(query)
+        search_query = await self.llm.refine_query(query)
         print(f"🕵️  Intent Refined: '{query}' -> '{search_query}'")
         
         # Phase 2: Embedding

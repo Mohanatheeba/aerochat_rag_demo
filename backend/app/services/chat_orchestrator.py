@@ -57,7 +57,7 @@ class ChatOrchestrator:
             # Step 4: Generation
             print("🧠 [LLM] Generating response...")
             session_history = await self.redis.get_context(session_id)
-            response_text, llm_latency = self.llm.generate_response(
+            response_text, llm_latency = await self.llm.generate_response(
                 user_query=user_message,
                 context=context,
                 session_history=session_history,
