@@ -18,23 +18,8 @@
 ├── Supabase → Auth + Support tickets
 ├── Super Admin → Built-in React panel
 ├── LLM → Groq API (free tier, llama3-70b)
-├── Embeddings → sentence-transformers (local / HuggingFace free)
-└── Tier 3 College Support → Selenium + Web Automation (free)
+└── Embeddings → sentence-transformers (local / HuggingFace free)
 ```
-
-## Features
-
-### Tier 1 & 2 College Support ✅
-- Colleges indexed in knowledge base
-- Fast semantic retrieval via PGVector
-- Instant NPC calculator results
-
-### Tier 3 College Support ✅ NEW
-- Automatic web search for college NPC calculator
-- Headless browser automation for form filling
-- Intelligent result extraction and formatting
-- Graceful fallback when automation unavailable
-- [See TIER3_IMPLEMENTATION.md for details](./TIER3_IMPLEMENTATION.md)
 
 ## Free Services Required (All Free Tier)
 
