@@ -15,9 +15,8 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_KEY: str = ""
     
-    # Groq (LLM)
-    GROQ_API_KEY: str = ""
-    LLM_MODEL: str = "llama-3.3-70b-versatile"
+    # OpenAI (LLM)
+    LLM_MODEL: str = "gpt-4o-mini"
     
     # Upstash (Redis / Railway Layer)
     UPSTASH_REDIS_REST_URL: str = ""
